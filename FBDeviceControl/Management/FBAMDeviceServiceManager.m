@@ -121,13 +121,21 @@
 - (FBFutureContextManager<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
 {
   FBFutureContextManager<FBAFCConnection *> *manager = self.houseArrestManagers[bundleID];
-  if (manager) {
-    return manager;
-  }
+
+  // --------------
+  // @andreasr (Unity): Always give out a new FBAFConnection since reusing one that had a failure previously
+  // (e.g. pull a file that does not exist), causes any subsequent operation to fail as well
+  //if (manager) {
+  // return manager;
+  //}
+  // --------------
+
   FBAMDeviceServiceManager_HouseArrest *delegate = [[FBAMDeviceServiceManager_HouseArrest alloc] initWithDevice:self.device bundleID:bundleID calls:afcCalls serviceTimeout:self.serviceTimeout];
   manager = [FBFutureContextManager managerWithQueue:self.device.workQueue delegate:delegate logger:self.device.logger];
+    
   self.houseArrestManagers[bundleID] = manager;
   self.houseArrestDelegates[bundleID] = delegate;
+    
   return manager;
 }
 
