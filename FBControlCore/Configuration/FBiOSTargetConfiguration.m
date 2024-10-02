@@ -19,6 +19,7 @@ FBDeviceModel const FBDeviceModeliPhone6S = @"iPhone 6s";
 FBDeviceModel const FBDeviceModeliPhone6SPlus = @"iPhone 6s Plus";
 FBDeviceModel const FBDeviceModeliPhoneSE_1stGeneration = @"iPhone SE (1st generation)";
 FBDeviceModel const FBDeviceModeliPhoneSE_2ndGeneration = @"iPhone SE (2nd generation)";
+FBDeviceModel const FBDeviceModeliPhoneSE_3rdGeneration = @"iPhone SE (3rd generation)";
 FBDeviceModel const FBDeviceModeliPhone7 = @"iPhone 7";
 FBDeviceModel const FBDeviceModeliPhone7Plus = @"iPhone 7 Plus";
 FBDeviceModel const FBDeviceModeliPhone8 = @"iPhone 8";
