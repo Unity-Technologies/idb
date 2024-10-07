@@ -39,6 +39,7 @@ extern FBDeviceModel const FBDeviceModeliPhone6S;
 extern FBDeviceModel const FBDeviceModeliPhone6SPlus;
 extern FBDeviceModel const FBDeviceModeliPhoneSE_1stGeneration;
 extern FBDeviceModel const FBDeviceModeliPhoneSE_2ndGeneration;
+extern FBDeviceModel const FBDeviceModeliPhoneSE_3rdGeneration;
 extern FBDeviceModel const FBDeviceModeliPhone7;
 extern FBDeviceModel const FBDeviceModeliPhone7Plus;
 extern FBDeviceModel const FBDeviceModeliPhone8;
