@@ -414,9 +414,6 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
           return [[FBDeviceControlError
                     describeFormat:@"Failed to install application %@ 0x%x (%@). %@", [hostAppURL lastPathComponent], status, errorMessage, statistics.summaryOfRecentEvents]
                     failFuture];
-        //return [[FBDeviceControlError
-        //  describeFormat:@"Failed to install application %@ 0x%x (%@)", [hostAppURL lastPathComponent], status, errorMessage]
-        //  failFuture];
       }
       [self.device.logger logFormat:@"Installed Application %@", hostAppURL];
       return FBFuture.empty;
@@ -442,9 +439,6 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
           return [[FBDeviceControlError
                     describeFormat:@"Failed to install application %@ 0x%x (%@). %@", [appURL lastPathComponent], status, errorMessage, statistics.summaryOfRecentEvents]
                     failFuture];
-        //return [[FBDeviceControlError
-        //  describeFormat:@"Failed to install application %@ 0x%x (%@)", [appURL lastPathComponent], status, errorMessage]
-        //  failFuture];
       }
       [self.device.logger logFormat:@"Installed Application %@", appURL];
       return FBFuture.empty;
