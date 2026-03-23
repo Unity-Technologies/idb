@@ -1,0 +1,17 @@
+{% metadata_file .yamato/common.metafile %}
+---
+
+build:
+  name: Build
+  agent:
+    image: {{agent_image.automation_tooling_macos_14_arm64_unity}}
+    flavor: m1.mac
+    type: Unity::VM::osx
+    model: M1
+  artifacts:
+    artifacts:
+      paths:
+        - build/Frameworks/**
+  timeout: 1
+  commands:
+    - ./build.sh framework build build
