@@ -11,7 +11,25 @@ build:
   artifacts:
     artifacts:
       paths:
-        - build/Frameworks/**
+        - build/idb.tar.zst
+      type: single-file
   timeout: 1
   commands:
     - ./build.sh framework build build
+    - cd build/Frameworks && tar --zstd --options zstd:compression-level=19 -cf ../idb.tar.zst .
+
+upload-artifacts:
+  name: Publish to Stevedore Testing
+  agent:
+    image: {{agent_image.slough_ops_ubuntu_22_04_base}}
+    flavor: b1.small
+    type: Unity::VM
+  dependencies:
+    - .yamato/build.yml#build
+  commands: 
+    - |-
+      set -euo pipefail
+      curl -sSo StevedoreUpload "$STEVEDORE_UPLOAD_TOOL_LINUX_X64_URL"
+      chmod +x StevedoreUpload
+      export STEVEDORE_UPLOAD_KEY="$STEVEDORE_UPLOAD_KEY_IDB"
+      ./StevedoreUpload --version-len=12 --repo=testing --version="$GIT_REVISION" build/idb.tar.zst
