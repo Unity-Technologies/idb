@@ -1,0 +1,3 @@
+agent_image:
+  automation_tooling_macos_14_arm64_unity: automation-tooling/macos-14-arm64-unity:v2.4943718
+  slough_ops_ubuntu_22_04_base: slough-ops/ubuntu-22.04-base:v0.0.6
