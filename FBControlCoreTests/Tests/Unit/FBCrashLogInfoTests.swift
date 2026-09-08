@@ -6,7 +6,6 @@
  */
 
 @testable import FBControlCore
-
 import XCTest
 
 final class FBCrashLogInfoTests: XCTestCase {

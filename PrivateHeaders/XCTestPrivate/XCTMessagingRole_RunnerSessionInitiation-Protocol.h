@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSNumber, NSString, NSUUID, XCTCapabilities;
+#import <Foundation/Foundation.h>
+
+@class XCTCapabilities;
 
 @protocol XCTMessagingRole_RunnerSessionInitiation
 - (id)_IDE_initiateSessionWithIdentifier:(NSUUID *)arg1 forClient:(NSString *)arg2 atPath:(NSString *)arg3 protocolVersion:(NSNumber *)arg4;
 - (id)_IDE_initiateSessionWithIdentifier:(NSUUID *)arg1 capabilities:(XCTCapabilities *)arg2;
 @end
-

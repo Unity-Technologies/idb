@@ -7,11 +7,11 @@
 
 #import <Foundation/Foundation.h>
 
-@class NSMutableSet, XCTTestIdentifierSet;
+@class XCTTestIdentifierSet;
 
 @interface XCTTestIdentifierSetBuilder : NSObject <NSCopying>
 {
-    NSMutableSet *_testIdentifiers;
+  NSMutableSet *_testIdentifiers;
 }
 
 - (id)copyWithZone:(struct _NSZone *)arg1;
@@ -24,8 +24,8 @@
 - (void)removeTestIdentifier:(id)arg1;
 - (void)addTestIdentifier:(id)arg1;
 - (_Bool)containsTestIdentifier:(id)arg1;
-@property(readonly) XCTTestIdentifierSet *testIdentifierSet;
-@property(readonly) unsigned long long count;
+@property (readonly) XCTTestIdentifierSet *testIdentifierSet;
+@property (readonly) unsigned long long count;
 - (id)initWithTestIdentifierSet:(id)arg1;
 - (id)initWithSet:(id)arg1;
 - (id)initWithArray:(id)arg1;
@@ -33,4 +33,3 @@
 - (id)init;
 
 @end
-

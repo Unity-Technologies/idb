@@ -7,9 +7,7 @@
 
 #import "FBAMRestorableDevice.h"
 
-#import "FBDeviceControlError.h"
-
-static NSString *const UnknownValue = @"unknown";
+static NSString *const kUnknownValue = @"unknown";
 
 @implementation FBAMRestorableDevice
 
@@ -38,17 +36,17 @@ static NSString *const UnknownValue = @"unknown";
 
 - (NSString *)uniqueIdentifier
 {
-  return [self.allValues[FBDeviceKeyUniqueChipID] stringValue];
+  return [self.allValues[FBDeviceKeyUniqueChipID] stringValue] ?: kUnknownValue;
 }
 
 - (NSString *)udid
 {
-  return UnknownValue;
+  return kUnknownValue;
 }
 
 - (NSString *)name
 {
-  return self.allValues[FBDeviceKeyDeviceName];
+  return self.allValues[FBDeviceKeyDeviceName] ?: kUnknownValue;
 }
 
 - (FBiOSTargetState)state
@@ -63,6 +61,8 @@ static NSString *const UnknownValue = @"unknown";
       return FBiOSTargetStateRestoreOS;
     case AMRestorableDeviceStateBootedOS:
       return FBiOSTargetStateBooted;
+    case AMRestorableDeviceStateUnknown:
+      return FBiOSTargetStateUnknown;
     default:
       return FBiOSTargetStateUnknown;
   }
@@ -74,10 +74,9 @@ static NSString *const UnknownValue = @"unknown";
   return [FBDeviceType genericWithName:productString];
 }
 
-
 - (NSArray<FBArchitecture> *)architectures
 {
-    return @[UnknownValue];
+  return @[kUnknownValue];
 }
 
 - (FBiOSTargetType)targetType
@@ -87,13 +86,13 @@ static NSString *const UnknownValue = @"unknown";
 
 - (FBOSVersion *)osVersion
 {
-  return [FBOSVersion genericWithName:UnknownValue];
+  return [FBOSVersion genericWithName:kUnknownValue];
 }
 
 - (NSDictionary<NSString *, id> *)extendedInformation
 {
   return @{
-    @"device": self.allValues,
+    @"device" : self.allValues,
   };
 }
 
@@ -101,12 +100,12 @@ static NSString *const UnknownValue = @"unknown";
 
 - (NSString *)buildVersion
 {
-  return UnknownValue;
+  return kUnknownValue;
 }
 
 - (NSString *)productVersion
 {
-  return UnknownValue;
+  return kUnknownValue;
 }
 
 - (AMDeviceRef)amDeviceRef
@@ -139,6 +138,8 @@ static NSString *const UnknownValue = @"unknown";
       return FBiOSTargetStateRestoreOS;
     case AMRestorableDeviceStateBootedOS:
       return FBiOSTargetStateBooted;
+    case AMRestorableDeviceStateUnknown:
+      return FBiOSTargetStateUnknown;
     default:
       return FBiOSTargetStateUnknown;
   }

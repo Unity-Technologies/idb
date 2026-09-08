@@ -5,15 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSObject.h"
+#import <Foundation/Foundation.h>
 
-#import "DTXBlockCompressor.h"
-
-@class NSString;
+@protocol DTXBlockCompressor;
 
 @interface DTXBlockCompressorLibFastCompression : NSObject <DTXBlockCompressor>
 {
-    void *_lzfseScratchBuffer;
+  void *_lzfseScratchBuffer;
 }
 
 - (_Bool)uncompressBuffer:(const char *)arg1 ofLength:(unsigned long long)arg2 toBuffer:(char *)arg3 withKnownUncompressedLength:(unsigned long long)arg4 usingCompressionType:(int)arg5;
@@ -21,10 +19,6 @@
 - (void)dealloc;
 
 // Remaining properties
-@property(readonly, copy) NSString *debugDescription;
-@property(readonly, copy) NSString *description;
-@property(readonly) unsigned long long hash;
-@property(readonly) Class superclass;
+@property (readonly, copy) NSString *debugDescription;
 
 @end
-

@@ -71,6 +71,91 @@ $ idb launch com.apple.mobilesafari
 
 Head over [to the main documentation](https://www.fbidb.io) for more details on what you can do with idb and the full list of commands. There are also instructions on how to [make changes to `idb` including building it from source](https://www.fbidb.io/docs/development).
 
+## Building from Source
+
+### Prerequisites
+
+- **Xcode 14.0+**
+- **XcodeGen**: `brew install xcodegen`
+- **For idb_companion**: protobuf and gRPC Swift plugins
+  ```
+  brew install protobuf swift-protobuf grpc-swift
+  ```
+
+### Building
+
+```bash
+# Build everything: frameworks, shims, SimulatorFrameworkBridge and
+# idb_companion, then assemble the runnable distribution
+./build.sh build
+
+# Build only the frameworks
+./build.sh build frameworks
+
+# Build the shim dylibs (Shimulator + Repl, iOS + macOS)
+./build.sh build shims
+
+# Build only idb_companion
+./build.sh build idb_companion
+
+# Build a specific framework
+./build.sh build FBControlCore
+```
+
+The individual build products are written under `Build/Products/Release`. A
+full `./build.sh build` also assembles a self-contained distribution at
+`Build/Distribution`, laid out the way `idb_companion` expects at runtime:
+
+```
+Build/Distribution/
+  idb_companion              # the executable
+  *.framework               # frameworks, resolved via @executable_path
+  Resources/
+    libShimulator-iOS.dylib
+    libShimulator-macOS.dylib
+    libRepl-iOS.dylib
+    libRepl-macOS.dylib
+    SimulatorFrameworkBridge
+```
+
+`idb_companion` discovers the shims and `SimulatorFrameworkBridge` from the
+`Resources` directory next to the executable, so run it from `Build/Distribution`
+(or copy that directory as a unit).
+
+### Running Tests
+
+```bash
+# Run all tests
+./build.sh test
+
+# Test a specific framework
+./build.sh test FBSimulatorControl
+```
+
+### Regenerating Xcode Projects
+
+The Xcode project files are generated from `project.yml` using XcodeGen. To regenerate without building:
+
+```bash
+./build.sh generate
+```
+
+### Build Script Reference
+
+```bash
+./build.sh help                          # Show all options
+./build.sh generate                      # Regenerate Xcode projects
+./build.sh build                         # Build all targets and package the distribution
+./build.sh build distribution            # Assemble Build/Distribution from built products
+./build.sh build frameworks              # Build all frameworks
+./build.sh build idb_companion           # Build idb_companion
+./build.sh build shims                   # Build all shim dylibs (Shimulator + Repl, iOS + macOS)
+./build.sh build SimulatorFrameworkBridge # Build the SimulatorFrameworkBridge helper
+./build.sh build FBControlCore           # Build specific framework
+./build.sh test                          # Run all tests
+./build.sh test FBSimulatorControl       # Test specific framework
+```
+
 ## Documentation
 
 Find the full documentation for this project at [fbidb.io](https://www.fbidb.io/)

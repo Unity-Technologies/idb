@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSString;
+#import <Foundation/Foundation.h>
 
 @protocol XCTMessagingRole_SelfDiagnosisIssueReporting
 - (id)_XCT_reportSelfDiagnosisIssue:(NSString *)arg1 description:(NSString *)arg2;
 @end
-

@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSString, XCActivityRecord;
+#import <Foundation/Foundation.h>
+
+@class XCActivityRecord;
 
 @protocol XCTMessagingRole_ActivityReporting_Legacy
 - (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 didFinishActivity:(XCActivityRecord *)arg3;
 - (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 willStartActivity:(XCActivityRecord *)arg3;
 @end
-

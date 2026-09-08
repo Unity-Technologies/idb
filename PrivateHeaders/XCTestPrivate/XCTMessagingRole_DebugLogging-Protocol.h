@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSString;
+#import <Foundation/Foundation.h>
 
 @protocol XCTMessagingRole_DebugLogging
 - (id)_XCT_logDebugMessage:(NSString *)arg1;
 @end
-

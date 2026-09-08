@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSNumber, XCTCapabilities;
+#import <Foundation/Foundation.h>
+
+@class XCTCapabilities;
 
 @protocol XCTMessagingRole_ControlSessionInitiation
 - (id)_IDE_authorizeTestSessionWithProcessID:(NSNumber *)arg1;
@@ -14,4 +16,3 @@
 - (id)_IDE_initiateControlSessionForTestProcessID:(NSNumber *)arg1 protocolVersion:(NSNumber *)arg2;
 - (id)_IDE_initiateControlSessionForTestProcessID:(NSNumber *)arg1;
 @end
-

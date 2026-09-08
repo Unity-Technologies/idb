@@ -9,14 +9,11 @@
 import asyncio
 import functools
 import inspect
-import logging
 import unittest
 import unittest.mock as _mock
 import warnings
-from typing import Awaitable, Callable, cast, TypeVar
-
-# pyre-ignore
-from unittest.case import _Outcome
+from collections.abc import Awaitable, Callable
+from typing import cast, TypeVar
 
 
 _RT = TypeVar("_RT")  # Return Generic
@@ -54,173 +51,37 @@ def awaitable(func: _F) -> _F:
     return cast(_F, new_func)
 
 
-class TestCase(unittest.TestCase):
-    def __init__(self, methodName="runTest", loop=None):
-        self.loop = loop or asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-        self.loop.set_debug(True)
-        super().__init__(methodName)
+# Prefer later.unittest.TestCase at Meta for task leak detection and modern async support.
+# Fall back to stdlib IsolatedAsyncioTestCase for OSS or environments without later.
+try:
+    import later.unittest as _later_unittest  # type: ignore[import-not-found]
 
-    async def run_async(self, testMethod, outcome, expecting_failure):
-        with outcome.testPartExecutor(self):
-            await awaitable(self.setUp)()
-        if outcome.success:
-            outcome.expecting_failure = expecting_failure
-            with outcome.testPartExecutor(self, isTest=True):
-                await awaitable(testMethod)()
-            outcome.expecting_failure = False
-            with outcome.testPartExecutor(self):
-                await awaitable(self.tearDown)()
-        await self.doCleanups()
+    _BaseTestCase = _later_unittest.TestCase
+except ImportError:
+    _BaseTestCase = unittest.IsolatedAsyncioTestCase
 
-    async def doCleanups(self):
-        outcome = self._outcome or _Outcome()
-        while self._cleanups:
-            function, args, kwargs = self._cleanups.pop()
-            with outcome.testPartExecutor(self):
-                await awaitable(function)(*args, **kwargs)
 
-    async def debug_async(self, testMethod):
-        await awaitable(self.setUp)()
-        await awaitable(testMethod)()
-        await awaitable(self.tearDown)()
-        while self._cleanups:
-            function, args, kwargs = self._cleanups.pop(-1)
-            await awaitable(function)(*args, **kwargs)
+class TestCase(_BaseTestCase):
+    """
+    Modernized test case using later.unittest.TestCase at Meta,
+    falling back to unittest.IsolatedAsyncioTestCase.
+    No eager event loop creation in __init__ to avoid import-time side effects.
+    See D109553234 / D109554536.
+    """
 
-    @_mock.patch("asyncio.base_events.logger")
-    @_mock.patch("asyncio.coroutines.logger")
-    def asyncio_orchestration_debug(self, testMethod, b_log, c_log):
-        asyncio.set_event_loop(self.loop)
-        real_logger = logging.getLogger("asyncio").error
-        c_log.error.side_effect = b_log.error.side_effect = real_logger
-        # Don't make testmethods cleanup tasks that existed before them
-        before_tasks = asyncio.all_tasks(self.loop)
-        _tasks_warning(before_tasks)
-        debug_async = self.debug_async(testMethod)
-        self.loop.run_until_complete(debug_async)
+    # Backward compatibility: some old code accesses self.loop directly.
+    # later unittest / IsolatedAsyncioTestCase manage loop lifecycle automatically.
+    # Provide property returning running loop, no eager creation.
+    # If you need loop in setUpClass, move logic to asyncSetUp or wrap with
+    # asyncio.run() — do not manually create event loops in tests.
+    @property
+    def loop(self) -> asyncio.AbstractEventLoop:
+        return asyncio.get_running_loop()
 
-        if c_log.error.called or b_log.error.called:
-            self.fail("asyncio logger.error() called!")
-        # Sometimes we end up with a reference to our task for debug_async
-        tasks = {
-            t
-            for t in asyncio.all_tasks(self.loop) - before_tasks
-            if not (t._coro == debug_async and t.done())
-        }
-        del before_tasks
-        self.assertEqual(set(), tasks, "left over asyncio tasks!")
-
-    @_mock.patch("asyncio.base_events.logger")
-    @_mock.patch("asyncio.coroutines.logger")
-    def asyncio_orchestration_outcome(
-        self, testMethod, outcome, expecting_failure, b_log, c_log
-    ):
-        asyncio.set_event_loop(self.loop)
-        real_logger = logging.getLogger("asyncio").error
-        c_log.error.side_effect = b_log.error.side_effect = real_logger
-        # Don't make testmethods cleanup tasks that existed before them
-        before_tasks = asyncio.all_tasks(self.loop)
-        _tasks_warning(before_tasks)
-        run_async = self.run_async(testMethod, outcome, expecting_failure)
-        ignore_tasks = getattr(
-            testMethod, "__unittest_asyncio_taskleaks__", False
-        ) or getattr(self, "__unittest_asyncio_taskleaks__", False)
-        with outcome.testPartExecutor(self):
-            self.loop.run_until_complete(run_async)
-            # Restore expecting_faiures so we can test the below
-            outcome.expecting_failure = expecting_failure
-            if c_log.error.called or b_log.error.called:
-                self.fail("asyncio logger.error() called!")
-
-            # Sometimes we end up with a reference to our task for run_async
-            tasks = {
-                t
-                for t in asyncio.all_tasks(self.loop) - before_tasks
-                if not (t._coro == run_async and t.done())
-            }
-            del before_tasks
-            if ignore_tasks and tasks:
-                warnings.warn(
-                    "There are left over asyncio tasks after running "
-                    f"testmethod: {tasks}",
-                    stacklevel=0,
-                )
-            else:
-                self.assertEqual(set(), tasks, "left over asyncio tasks!")
-
-    # pyre-ignore
-    def run(self, result=None):
-        """
-        This is a complete copy of TestCase.run
-        But with some asyncio worked into it.
-        """
-        orig_result = result
-        if result is None:
-            result = self.defaultTestResult()
-            startTestRun = getattr(result, "startTestRun", None)
-            if startTestRun is not None:
-                startTestRun()
-
-        result.startTest(self)
-
-        testMethod = getattr(self, self._testMethodName)
-        if getattr(self.__class__, "__unittest_skip__", False) or getattr(
-            testMethod, "__unittest_skip__", False
-        ):
-            # If the class or method was skipped.
-            try:
-                skip_why = getattr(
-                    self.__class__, "__unittest_skip_why__", ""
-                ) or getattr(testMethod, "__unittest_skip_why__", "")
-                self._addSkip(result, self, skip_why)  # noqa T484
-            finally:
-                result.stopTest(self)
-            return None
-        expecting_failure_method = getattr(
-            testMethod, "__unittest_expecting_failure__", False
-        )
-        expecting_failure_class = getattr(self, "__unittest_expecting_failure__", False)
-        expecting_failure = expecting_failure_class or expecting_failure_method
-        outcome = _Outcome(result)
-        try:
-            self._outcome = outcome
-
-            self.asyncio_orchestration_outcome(testMethod, outcome, expecting_failure)
-
-            for test, reason in outcome.skipped:
-                self._addSkip(result, test, reason)  # noqa T484
-            self._feedErrorsToResult(result, outcome.errors)  # noqa T484
-            if outcome.success:
-                if expecting_failure:
-                    if outcome.expectedFailure:
-                        self._addExpectedFailure(  # noqa T484
-                            result, outcome.expectedFailure
-                        )
-                    else:
-                        self._addUnexpectedSuccess(result)  # noqa T484
-                else:
-                    result.addSuccess(self)
-            return result
-        finally:
-            result.stopTest(self)
-            if orig_result is None:
-                stopTestRun = getattr(result, "stopTestRun", None)
-                if stopTestRun is not None:
-                    stopTestRun()
-
-            # explicitly break reference cycles:
-            # outcome.errors -> frame -> outcome -> outcome.errors
-            # outcome.expectedFailure -> frame -> outcome -> outcome.expectedFailure
-            outcome.errors.clear()
-            outcome.expectedFailure = None
-
-            # clear the outcome, no more needed
-            self._outcome = None
-
-    # pyre-ignore
-    def debug(self):
-        self.asyncio_orchestration_debug(getattr(self, self._testMethodName))
+    @loop.setter
+    def loop(self, value: asyncio.AbstractEventLoop) -> None:
+        # No-op setter for backward compatibility. Test framework manages loop.
+        return
 
 
 class AsyncMock(_mock.Mock):
@@ -230,7 +91,7 @@ class AsyncMock(_mock.Mock):
     """
 
     def __call__(self, *args, **kwargs):
-        sup = super(AsyncMock, self)
+        sup = super()
 
         async def coro():
             return sup.__call__(*args, **kwargs)

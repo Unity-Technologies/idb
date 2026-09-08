@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <XCTest/XCTMessagingRole_UIAutomationEventReporting-Protocol.h>
-#import <XCTest/_XCTMessaging_VoidProtocol-Protocol.h>
+#import <Foundation/Foundation.h>
+
+@protocol XCTMessagingRole_UIAutomationEventReporting, _XCTMessaging_VoidProtocol;
 
 @protocol XCTMessagingChannel_DaemonRecorderToIDE <XCTMessagingRole_UIAutomationEventReporting, _XCTMessaging_VoidProtocol>
 
 @optional
 - (void)__dummy_method_to_work_around_68987191;
 @end
-

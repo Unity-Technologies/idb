@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "DTXAllowedRPC.h"
+#import <Foundation/Foundation.h>
 
-@class NSDictionary, NSString;
+@protocol DTXAllowedRPC;
 
 @protocol DTXConnectionRemoteReceiveQueueCalls <DTXAllowedRPC>
 - (void)_notifyCompressionHint:(unsigned int)arg1 forChannelCode:(unsigned int)arg2;
@@ -16,4 +16,3 @@
 - (void)_notifyOfPublishedCapabilities:(NSDictionary *)arg1;
 - (void)_requestChannelWithCode:(unsigned int)arg1 identifier:(NSString *)arg2;
 @end
-

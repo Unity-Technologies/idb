@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, NSString, NSURL;
+#import <Foundation/Foundation.h>
 
 @protocol XCTMessagingRole_SiriAutomation
 - (void)_XCT_injectVoiceRecognitionAudioInputPaths:(NSArray *)arg1 completion:(void (^)(_Bool, NSError *))arg2;
@@ -14,4 +14,3 @@
 - (void)_XCT_startSiriUIRequestWithText:(NSString *)arg1 completion:(void (^)(_Bool, NSError *))arg2;
 - (void)_XCT_requestSiriEnabledStatus:(void (^)(_Bool, NSError *))arg1;
 @end
-

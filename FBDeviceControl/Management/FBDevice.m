@@ -6,28 +6,12 @@
  */
 
 #import "FBDevice.h"
-#import "FBDevice+Private.h"
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 #import "FBAMDevice.h"
 #import "FBAMRestorableDevice.h"
-#import "FBDeviceApplicationCommands.h"
-#import "FBDeviceControlError.h"
-#import "FBDeviceCrashLogCommands.h"
-#import "FBDeviceDebuggerCommands.h"
-#import "FBDeviceDeveloperDiskImageCommands.h"
-#import "FBDeviceDiagnosticInformationCommands.h"
-#import "FBDeviceEraseCommands.h"
-#import "FBDeviceFileCommands.h"
-#import "FBDeviceFileCommands.h"
-#import "FBDeviceLifecycleCommands.h"
-#import "FBDeviceLocationCommands.h"
-#import "FBDeviceLogCommands.h"
-#import "FBDevicePowerCommands.h"
-#import "FBDeviceScreenshotCommands.h"
-#import "FBDeviceVideoRecordingCommands.h"
-#import "FBDeviceXCTestCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -69,7 +53,7 @@
   _restorableDevice = restorableDevice;
   [self cacheValuesFromInfo:(amDevice ?: restorableDevice) overwrite:YES];
   _logger = [logger withName:self.udid];
-  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBDevice.commandResponders statefulCommands:FBDevice.statefulCommands];
+  _commandCache = [FBTargetCommandCache new];
 
   return self;
 }
@@ -91,7 +75,7 @@
   if (_temporaryDirectory) {
     return _temporaryDirectory;
   }
-  _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger];
+  _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger ?: [FBControlCoreLoggerFactory systemLoggerWritingToStderr:NO withDebugLogging:NO]];
   return _temporaryDirectory;
 }
 
@@ -103,21 +87,18 @@
 
 - (NSString *)platformRootDirectory
 {
-  switch (self.deviceType.family)
-  {
-      case FBControlCoreProductFamilyUnknown:
-      case FBControlCoreProductFamilyiPhone:
-      case FBControlCoreProductFamilyiPad:
-          return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform"];
-        
-      case FBControlCoreProductFamilyAppleTV:
-          return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/AppleTVOS.platform"];
-          
-      case FBControlCoreProductFamilyAppleWatch:
-          return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/WatchOS.platform"];
-          
-      case FBControlCoreProductFamilyMac:
-          return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/MacOSX.platform"];
+  switch (self.deviceType.family) {
+    case FBControlCoreProductFamilyAppleTV:
+      return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/AppleTVOS.platform"];
+    case FBControlCoreProductFamilyAppleWatch:
+      return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/WatchOS.platform"];
+    case FBControlCoreProductFamilyMac:
+      return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/MacOSX.platform"];
+    case FBControlCoreProductFamilyUnknown:
+    case FBControlCoreProductFamilyiPhone:
+    case FBControlCoreProductFamilyiPad:
+    default:
+      return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform"];
   }
 }
 
@@ -146,7 +127,13 @@
   return NSDictionary.dictionary;
 }
 
-- (BOOL) requiresBundlesToBeSigned {
+- (NSDictionary<NSString *, NSString *> *)environmentAdditions
+{
+  return @{};
+}
+
+- (BOOL)requiresBundlesToBeSigned
+{
   return YES;
 }
 
@@ -181,7 +168,7 @@
   return _restorableDevice;
 }
 
-- (void)cacheValuesFromInfo:(id<FBiOSTargetInfo, FBDevice>)targetInfo overwrite:(BOOL)overwrite
+- (void)cacheValuesFromInfo:(id<FBiOSTargetInfo, FBDeviceProtocol>)targetInfo overwrite:(BOOL)overwrite
 {
   // Don't overwrite with nil values.
   if (!targetInfo) {
@@ -236,7 +223,7 @@
 - (AMDeviceRef)amDeviceRef
 {
   FBAMDevice *amDevice = self.amDevice;
-  if (!amDevice)  {
+  if (!amDevice) {
     return NULL;
   }
   return amDevice.amDeviceRef;
@@ -253,63 +240,59 @@
 
 #pragma mark FBDeviceCommands Protocol Implementation
 
-- (FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(NSString *)format, ...
+- (FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(NSString *)purpose
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    va_list args;
-    va_start(args, format);
-    NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-    va_end(args);
-    return [amDevice connectToDeviceWithPurpose:@"%@", string];
+    return (FBFutureContext *)[amDevice connectToDeviceWithPurpose:purpose];
   }
-  return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
+  return (FBFutureContext *)[[FBDeviceControlError
+                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    return [amDevice startService:service];
+    return (FBFutureContext *)[amDevice startService:service];
   }
-  return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
+  return (FBFutureContext *)[[FBDeviceControlError
+                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(NSString *)service
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    return [amDevice startDeviceLinkService:service];
+    return (FBFutureContext *)[amDevice startDeviceLinkService:service];
   }
-  return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
+  return (FBFutureContext *)[[FBDeviceControlError
+                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    return [amDevice startAFCService:service];
+    return (FBFutureContext *)[amDevice startAFCService:service];
   }
-  return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
+  return (FBFutureContext *)[[FBDeviceControlError
+                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    return [amDevice houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls];
+    return (FBFutureContext *)[amDevice houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls];
   }
-  return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
+  return (FBFutureContext *)[[FBDeviceControlError
+                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (void)invalidateHouseArrestAFCConnectionForBundleID:(NSString *)bundleID
@@ -320,70 +303,14 @@
   }
 }
 
-#pragma mark Forwarding
-
-+ (NSArray<Class> *)commandResponders
-{
-  static dispatch_once_t onceToken;
-  static NSArray<Class> *commandClasses;
-  dispatch_once(&onceToken, ^{
-    commandClasses = @[
-      FBDeviceActivationCommands.class,
-      FBDeviceApplicationCommands.class,
-      FBDeviceCrashLogCommands.class,
-      FBDeviceDebuggerCommands.class,
-      FBDeviceDebugSymbolsCommands.class,
-      FBDeviceDeveloperDiskImageCommands.class,
-      FBDeviceDiagnosticInformationCommands.class,
-      FBDeviceEraseCommands.class,
-      FBDeviceFileCommands.class,
-      FBDeviceLifecycleCommands.class,
-      FBDeviceLocationCommands.class,
-      FBDeviceLogCommands.class,
-      FBDevicePowerCommands.class,
-      FBDeviceRecoveryCommands.class,
-      FBDeviceScreenshotCommands.class,
-      FBDeviceSocketForwardingCommands.class,
-      FBDeviceVideoRecordingCommands.class,
-      FBDeviceXCTestCommands.class,
-      FBInstrumentsCommands.class,
-      FBXCTraceRecordCommands.class,
-    ];
-  });
-  return commandClasses;
-}
-
-+ (NSSet<Class> *)statefulCommands
-{
-  // All commands are stateful
-  return [NSSet setWithArray:self.commandResponders];
-}
+#pragma mark FBAMDevice forwarding
 
 - (id)forwardingTargetForSelector:(SEL)selector
 {
-  // Try the underling FBAMDevice instance>
   if ([self.amDevice respondsToSelector:selector]) {
     return self.amDevice;
   }
-  // Try the forwarder.
-  id command = [self.forwarder forwardingTargetForSelector:selector];
-  if (command) {
-    return command;
-  }
-  // Nothing left.
   return [super forwardingTargetForSelector:selector];
-}
-
-- (BOOL)conformsToProtocol:(Protocol *)protocol
-{
-  if ([super conformsToProtocol:protocol]) {
-    return YES;
-  }
-  if ([self.forwarder conformsToProtocol:protocol]) {
-    return  YES;
-  }
-
-  return NO;
 }
 
 @end
