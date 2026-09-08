@@ -11,12 +11,13 @@ build:
   artifacts:
     artifacts:
       paths:
-        - build/idb.tar.zst
+        - dist/idb.tar.zst
       type: single-file
   timeout: 1
   commands:
-    - ./build.sh framework build build
-    - cd build/Frameworks && tar --zstd --options zstd:compression-level=19 -cf ../idb.tar.zst .
+    - brew install xcodegen
+    - .yamato/build-frameworks.sh dist
+    - cd dist/Frameworks && tar --zstd --options zstd:compression-level=19 -cf ../idb.tar.zst .
 
 upload-artifacts:
   name: Publish to Stevedore Testing
@@ -32,4 +33,4 @@ upload-artifacts:
       curl -sSo StevedoreUpload "$STEVEDORE_UPLOAD_TOOL_LINUX_X64_URL"
       chmod +x StevedoreUpload
       export STEVEDORE_UPLOAD_KEY="$STEVEDORE_UPLOAD_KEY_IDB"
-      ./StevedoreUpload --version-len=12 --repo=testing --version="$GIT_REVISION" build/idb.tar.zst
+      ./StevedoreUpload --version-len=12 --repo=testing --version="$GIT_REVISION" dist/idb.tar.zst

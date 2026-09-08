@@ -1,0 +1,55 @@
+name: Shimulator
+
+options:
+  createIntermediateGroups: true
+
+targets:
+  Shimulator-iOS:
+    type: library.dynamic
+    platform: iOS
+    deploymentTarget: "15.0"
+    configFiles:
+      Debug: Configs/Shimulator-iOS.xcconfig
+      Release: Configs/Shimulator-iOS.xcconfig
+    sources:
+      - path: Tools
+      - path: TestReporterShim
+      - path: TestCrashShim
+      - path: TestLoadingShim
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_NAME: Shimulator-iOS
+        EXECUTABLE_PREFIX: lib
+        CODE_SIGN_IDENTITY: "-"
+        CLANG_ENABLE_OBJC_ARC: NO
+        GCC_PREPROCESSOR_DEFINITIONS: $(inherited) SENTEST_IGNORE_DEPRECATION_WARNING=1
+        OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
+    dependencies:
+      - sdk: Foundation.framework
+      - sdk: UIKit.framework
+
+  Shimulator-macOS:
+    type: library.dynamic
+    platform: macOS
+    deploymentTarget: "12.0"
+    configFiles:
+      Debug: Configs/Shimulator-macOS.xcconfig
+      Release: Configs/Shimulator-macOS.xcconfig
+    sources:
+      - path: Tools
+      - path: TestReporterShim
+      - path: TestCrashShim
+      - path: TestLoadingShim
+    settings:
+      base:
+        SDKROOT: macosx
+        PRODUCT_NAME: Shimulator-macOS
+        EXECUTABLE_PREFIX: lib
+        CODE_SIGN_IDENTITY: "-"
+        CLANG_ENABLE_OBJC_ARC: NO
+        GCC_PREPROCESSOR_DEFINITIONS: $(inherited) SENTEST_IGNORE_DEPRECATION_WARNING=1
+        OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
+    dependencies:
+      - sdk: Foundation.framework
+      - sdk: AppKit.framework

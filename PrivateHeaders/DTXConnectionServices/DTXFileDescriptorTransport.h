@@ -5,17 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <Foundation/Foundation.h>
+
 #import <DTXConnectionServices/DTXTransport.h>
 
 @interface DTXFileDescriptorTransport : DTXTransport
 {
-    int _inFD;
-    int _outFD;
-    NSObject<OS_dispatch_queue> *_inputQueue;
-    NSObject<OS_dispatch_queue> *_outputQueue;
-    int _outputWaitKQ;
-    NSObject<OS_dispatch_source> *_inputSource;
-    CDUnknownBlockType _disconnectBlock;
+  int _inFD;
+  int _outFD;
+  dispatch_queue_t _inputQueue;
+  dispatch_queue_t _outputQueue;
+  int _outputWaitKQ;
+  dispatch_queue_t _inputSource;
+  CDUnknownBlockType _disconnectBlock;
 }
 
 - (int)supportedDirections;

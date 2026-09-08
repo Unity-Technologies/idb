@@ -5,16 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSObject.h"
-
-#import "NSCoding.h"
+#import <Foundation/Foundation.h>
 
 @interface DTXLegacyCompactDictionaryAdapter : NSObject <NSCoding>
-{
-}
+{}
 
 - (id)initWithCoder:(id)arg1;
 - (void)encodeWithCoder:(id)arg1;
 
 @end
-

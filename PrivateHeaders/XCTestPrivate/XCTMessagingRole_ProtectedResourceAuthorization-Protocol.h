@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSString;
+#import <Foundation/Foundation.h>
 
 @protocol XCTMessagingRole_ProtectedResourceAuthorization
 - (void)_XCT_resetAuthorizationStatusForBundleIdentifier:(NSString *)arg1 resourceIdentifier:(NSString *)arg2 reply:(void (^)(_Bool, NSError *))arg3;
 @end
-

@@ -5,10 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, NSDictionary, NSNumber;
+#import <Foundation/Foundation.h>
 
 @protocol XCTMessagingRole_UIRecordingControl
 - (id)_IDE_stopRecording;
 - (id)_IDE_startRecordingProcessPID:(NSNumber *)arg1 applicationSnapshotAttributes:(NSArray *)arg2 applicationSnapshotParameters:(NSDictionary *)arg3 elementSnapshotAttributes:(NSArray *)arg4 elementSnapshotParameters:(NSDictionary *)arg5 simpleTargetGestureNames:(NSArray *)arg6;
 @end
-

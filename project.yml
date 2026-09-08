@@ -1,0 +1,345 @@
+name: FBSimulatorControl
+
+options:
+  deploymentTarget:
+    macOS: "12.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  bundleIdPrefix: com.facebook
+
+configFiles:
+  Debug: Configuration/Shared.xcconfig
+  Release: Configuration/Shared.xcconfig
+
+settings:
+  base:
+    HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/PrivateHeaders
+
+targets:
+  FBControlCore:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: FBControlCore/FBControlCore.xcconfig
+      Release: FBControlCore/FBControlCore.xcconfig
+    sources:
+      - path: FBControlCore
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBControlCore/FBControlCore-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCore
+        PRODUCT_NAME: FBControlCore
+        # Fork-local: marks idb's own framework builds, so the consumer-only
+        # Swift-header include in FBDataConsumer.h stays out of them.
+        GCC_PREPROCESSOR_DEFINITIONS: $(inherited) IDB_BUILDING_FRAMEWORKS=1
+        DEFINES_MODULE: YES
+        # Fork-local: dynamic, and able to find its siblings. See project.yml's header.
+        MACH_O_TYPE: mh_dylib
+        LD_RUNPATH_SEARCH_PATHS: $(inherited) @loader_path/../../..
+        SWIFT_VERSION: "6.0"
+        # Mixed-language workaround: Xcode 26 omits the Swift module's emit
+        # directory from HEADER_SEARCH_PATHS, so `#import "FBControlCore-Swift.h"`
+        # in .m files fails to find the Swift-generated header. Add the per-arch
+        # Swift output dir explicitly.
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/PrivateHeaders $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)
+    dependencies:
+      - sdk: AVFoundation.framework
+      - sdk: Cocoa.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreMedia.framework
+      - sdk: Foundation.framework
+      - sdk: ServiceManagement.framework
+
+  FBControlCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: FBControlCoreTests/FBControlCoreTests.xcconfig
+      Release: FBControlCoreTests/FBControlCoreTests.xcconfig
+    sources:
+      - path: FBControlCoreTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBControlCoreTests/FBControlCoreTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCoreTests
+        PRODUCT_NAME: FBControlCoreTests
+    dependencies:
+      - target: FBControlCore
+      - sdk: XCTest.framework
+
+  XCTestBootstrap:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: XCTestBootstrap/XCTestBootstrap.xcconfig
+      Release: XCTestBootstrap/XCTestBootstrap.xcconfig
+    sources:
+      - path: XCTestBootstrap
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+          - "**/*.md"
+          - "**/*.modulemap"
+      - path: Shims/Shimulator/Tools/FBXCTestConstants.h
+        headerVisibility: project
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/XCTestBootstrap/XCTestBootstrap-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.XCTestBootstrap
+        PRODUCT_NAME: XCTestBootstrap
+        # Fork-local: marks idb's own framework builds, so the consumer-only
+        # Swift-header include in FBDataConsumer.h stays out of them.
+        GCC_PREPROCESSOR_DEFINITIONS: $(inherited) IDB_BUILDING_FRAMEWORKS=1
+        DEFINES_MODULE: YES
+        # Fork-local: dynamic, and able to find its siblings. See project.yml's header.
+        MACH_O_TYPE: mh_dylib
+        LD_RUNPATH_SEARCH_PATHS: $(inherited) @loader_path/../../..
+        SWIFT_VERSION: "6.0"
+        MODULEMAP_FILE: $(SRCROOT)/XCTestBootstrap/module.modulemap
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/Shims/Shimulator/Tools
+    dependencies:
+      - target: FBControlCore
+        embed: true
+      - sdk: Cocoa.framework
+      - sdk: Foundation.framework
+      - sdk: IOKit.framework
+
+  XCTestBootstrapTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: XCTestBootstrapTests/XCTestBootstrapTests.xcconfig
+      Release: XCTestBootstrapTests/XCTestBootstrapTests.xcconfig
+    sources:
+      - path: XCTestBootstrapTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/XCTestBootstrapTests/XCTestBootstrapTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.XCTestBootstrapTests
+        PRODUCT_NAME: XCTestBootstrapTests
+    dependencies:
+      - target: XCTestBootstrap
+      - sdk: XCTest.framework
+
+  FBSimulatorControl:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: FBSimulatorControl/FBSimulatorControl.xcconfig
+      Release: FBSimulatorControl/FBSimulatorControl.xcconfig
+    sources:
+      - path: FBSimulatorControl
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControl
+        PRODUCT_NAME: FBSimulatorControl
+        # Fork-local: marks idb's own framework builds, so the consumer-only
+        # Swift-header include in FBDataConsumer.h stays out of them.
+        GCC_PREPROCESSOR_DEFINITIONS: $(inherited) IDB_BUILDING_FRAMEWORKS=1
+        DEFINES_MODULE: YES
+        # Fork-local: dynamic, and able to find its siblings. See project.yml's header.
+        MACH_O_TYPE: mh_dylib
+        LD_RUNPATH_SEARCH_PATHS: $(inherited) @loader_path/../../..
+        SWIFT_VERSION: "6.0"
+        # Mixed-language workaround: see FBControlCore for rationale.
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/PrivateHeaders $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)
+        # CoreSimulator and SimulatorKit are private Apple frameworks living in
+        # $(DEVELOPER_DIR)/Library/PrivateFrameworks; they're not on the public SDK search path.
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
+        # Wrap the reverse-engineered headers under PrivateHeaders/<Name>/ as Clang
+        # modules so Swift can `import CoreSimulator`, `import SimulatorKit`, etc.
+        # Mirrors `make_private_header_frameworks()` in fbobjc/Tools/idb/defs.bzl.
+        OTHER_SWIFT_FLAGS: $(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/module.modulemap
+        # CoreSimulator and AccessibilityPlatformTranslation are loaded at
+        # runtime. Swift generates direct class references that must be satisfied
+        # at link time, so weak-link against the TBD stub. SimulatorKit is
+        # header-only — no symbols are referenced from compiled code.
+        OTHER_LDFLAGS: $(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+    dependencies:
+      # Fork-local: FBSimulator.h imports <CompanionUtilities/CompanionUtilities-Swift.h>,
+      # but upstream does not declare the dependency, so a frameworks-only build
+      # fails unless CompanionUtilities happens to have been built already.
+      - target: CompanionUtilities
+        embed: false
+      - target: FBControlCore
+        embed: true
+      - target: XCTestBootstrap
+        embed: true
+      - sdk: AVFoundation.framework
+      - sdk: Accelerate.framework
+      - sdk: Cocoa.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreImage.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreVideo.framework
+      - sdk: Foundation.framework
+      - sdk: IOSurface.framework
+      - sdk: Metal.framework
+      - sdk: UniformTypeIdentifiers.framework
+      - sdk: VideoToolbox.framework
+
+  FBSimulatorControlTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
+      Release: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
+    sources:
+      - path: FBSimulatorControlTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+      - path: FBControlCoreTests/Templates
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlTests
+        PRODUCT_NAME: FBSimulatorControlTests
+    dependencies:
+      - target: FBControlCore
+      - target: XCTestBootstrap
+      - target: FBSimulatorControl
+      - sdk: XCTest.framework
+      - sdk: Metal.framework
+
+  FBDeviceControl:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: FBDeviceControl/FBDeviceControl.xcconfig
+      Release: FBDeviceControl/FBDeviceControl.xcconfig
+    sources:
+      - path: FBDeviceControl
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+          - "**/*.md"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBDeviceControl/FBDeviceControl-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBDeviceControl
+        PRODUCT_NAME: FBDeviceControl
+        # Fork-local: marks idb's own framework builds, so the consumer-only
+        # Swift-header include in FBDataConsumer.h stays out of them.
+        GCC_PREPROCESSOR_DEFINITIONS: $(inherited) IDB_BUILDING_FRAMEWORKS=1
+        DEFINES_MODULE: YES
+        # Fork-local: dynamic, and able to find its siblings. See project.yml's header.
+        MACH_O_TYPE: mh_dylib
+        LD_RUNPATH_SEARCH_PATHS: $(inherited) @loader_path/../../..
+        SWIFT_VERSION: "6.0"
+    dependencies:
+      - target: FBControlCore
+        embed: true
+      - target: XCTestBootstrap
+        embed: true
+      - sdk: AVFoundation.framework
+      - sdk: Cocoa.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreMediaIO.framework
+      - sdk: CoreVideo.framework
+      - sdk: Foundation.framework
+
+  FBDeviceControlTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: FBDeviceControlTests/FBDeviceControlTests.xcconfig
+      Release: FBDeviceControlTests/FBDeviceControlTests.xcconfig
+    sources:
+      - path: FBDeviceControlTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBDeviceControlTests/FBDeviceControlTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBDeviceControlTests
+        PRODUCT_NAME: FBDeviceControlTests
+    dependencies:
+      - target: FBControlCore
+      - target: XCTestBootstrap
+      - target: FBDeviceControl
+      - sdk: XCTest.framework
+
+  CompanionUtilities:
+    type: framework
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - path: CompanionUtilities
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionUtilities
+        PRODUCT_NAME: CompanionUtilities
+        DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        # The @TaskLocal macro lives in SwiftMacros plugin and sometimes can't
+        # be loaded under Xcode 26's plugin sandbox; disable the frontend
+        # sandbox so swift-plugin-server can spawn the macro implementation.
+        OTHER_SWIFT_FLAGS: $(inherited) -Xfrontend -disable-sandbox
+    dependencies:
+      - sdk: Foundation.framework
+
+  CompanionUtilitiesTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - path: CompanionUtilitiesTests
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionUtilitiesTests
+        PRODUCT_NAME: CompanionUtilitiesTests
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: CompanionUtilities
+      - sdk: XCTest.framework
+
+  CompanionLib:
+    type: framework
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - path: CompanionLib
+        excludes:
+          - "**/*-Info.plist"
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionLib
+        PRODUCT_NAME: CompanionLib
+        DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: FBControlCore
+        embed: false
+      - target: XCTestBootstrap
+        embed: false
+      - target: FBSimulatorControl
+        embed: false
+      - target: FBDeviceControl
+        embed: false
+      - target: CompanionUtilities
+        embed: false
+      - sdk: Foundation.framework

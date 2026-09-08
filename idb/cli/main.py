@@ -13,7 +13,21 @@ import logging
 import os
 import shutil
 import sys
+import warnings
 from typing import List, Optional, Set, Union
+
+# Suppress thrift-py-deprecated migration warnings from internal Meta libraries.
+# These are emitted by libfb.py.asyncio.scribe (used for scuba logging) and are
+# not actionable by idb users. The migration is tracked in the owning library.
+warnings.filterwarnings(
+    "ignore",
+    message="Uses thrift-py-deprecated",
+    module=r"libfb\.py\..*",
+)
+
+# Mute infrastructure loggers that would otherwise leak to stderr on every
+# idb invocation. Users only care about idb output, not scuba teardown noise.
+logging.getLogger("scuba_logger").setLevel(logging.CRITICAL)
 
 import idb.common.plugin as plugin
 from idb.cli.commands.accessibility import (
@@ -27,13 +41,12 @@ from idb.cli.commands.app import (
     AppUninstallCommand,
 )
 from idb.cli.commands.approve import ApproveCommand
-from idb.cli.commands.contacts import ContactsUpdateCommand
+from idb.cli.commands.contacts import ContactsClearCommand, ContactsUpdateCommand
 from idb.cli.commands.crash import (
     CrashDeleteCommand,
     CrashListCommand,
     CrashShowCommand,
 )
-from idb.cli.commands.daemon import DaemonCommand
 from idb.cli.commands.dap import DapCommand
 from idb.cli.commands.debugserver import (
     DebugServerStartCommand,
@@ -59,6 +72,9 @@ from idb.cli.commands.hid import (
     ButtonCommand,
     KeyCommand,
     KeySequenceCommand,
+    MultiTapCommand,
+    PinchCommand,
+    RemoteCommand,
     SwipeCommand,
     TapCommand,
     TextCommand,
@@ -72,6 +88,7 @@ from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.memory import SimulateMemoryWarningCommand
 from idb.cli.commands.notification import SendNotificationCommand
+from idb.cli.commands.photos import PhotosClearCommand
 from idb.cli.commands.revoke import RevokeCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.settings import (
@@ -117,16 +134,22 @@ logging.basicConfig(
 logger: logging.Logger = logging.getLogger()
 
 
-def get_default_companion_path() -> Optional[str]:
+def get_default_companion_path() -> str | None:
     if sys.platform != "darwin":
         return None
+    # Prefer the direct binary over the wrapper script at /usr/local/bin/idb_companion,
+    # which invokes a DotSlash stub that can fail due to environment differences
+    # (e.g., XAR/PAR modifying PATH to include an incompatible dotslash binary).
+    direct_path = "/opt/facebook/idb/bin/idb_companion"
+    if os.path.isfile(direct_path):
+        return direct_path
     return shutil.which("idb_companion") or "/usr/local/bin/idb_companion"
 
 
 SysExitArg = Union[int, str, None]
 
 
-async def gen_main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
+async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
     # Make sure all files are created with global rw permissions
     os.umask(0o000)
     # Setup parser
@@ -180,7 +203,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
         help="If flagged will not modify local state when a companion is known to be unresponsive",
     )
     shell_command = ShellCommand(parser=parser)
-    commands: List[Command] = [
+    commands: list[Command] = [
         AppInstallCommand(),
         AppUninstallCommand(),
         AppListCommand(),
@@ -214,7 +237,12 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
         CommandGroup(
             name="contacts",
             description="Contacts database operations on target",
-            commands=[ContactsUpdateCommand()],
+            commands=[ContactsUpdateCommand(), ContactsClearCommand()],
+        ),
+        CommandGroup(
+            name="photos",
+            description="Photos library operations on target",
+            commands=[PhotosClearCommand()],
         ),
         LogCommand(),
         CommandGroup(
@@ -242,7 +270,6 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
         TargetCloneCommand(),
         TargetDeleteCommand(),
         TargetDeleteAllCommand(),
-        DaemonCommand(),
         ScreenshotCommand(),
         CommandGroup(
             name="ui",
@@ -251,7 +278,10 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
                 AccessibilityInfoAllCommand(),
                 AccessibilityInfoAtPointCommand(),
                 TapCommand(),
+                MultiTapCommand(),
+                PinchCommand(),
                 ButtonCommand(),
+                RemoteCommand(),
                 TextCommand(),
                 KeyCommand(),
                 KeySequenceCommand(),
@@ -340,7 +370,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
         await drain_coroutines(pending)
 
 
-async def drain_coroutines(pending: Set[asyncio.Task]) -> None:
+async def drain_coroutines(pending: set[asyncio.Task]) -> None:
     if not pending:
         return
     logger.debug(f"Shutting down {len(pending)} coroutines")
@@ -355,12 +385,8 @@ async def drain_coroutines(pending: Set[asyncio.Task]) -> None:
         pass
 
 
-def main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
-    loop = asyncio.get_event_loop()
-    try:
-        return loop.run_until_complete(gen_main(cmd_input))
-    finally:
-        loop.close()
+def main(cmd_input: list[str] | None = None) -> SysExitArg:
+    return asyncio.run(gen_main(cmd_input))
 
 
 def main_2() -> None:

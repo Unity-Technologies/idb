@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <DTXConnectionServices/DTXMessageParser.h>
+#import <Foundation/Foundation.h>
 
-@class NSMutableArray;
+#import <DTXConnectionServices/DTXMessageParser.h>
 
 @interface DTXLegacyMessageParser : DTXMessageParser
 {
-    NSMutableArray *_savedKeyArrays;
+  NSMutableArray *_savedKeyArrays;
 }
 
 + (void)initialize;
@@ -20,4 +20,3 @@
 - (id)initWithMessageHandler:(CDUnknownBlockType)arg1 andParseExceptionHandler:(CDUnknownBlockType)arg2;
 
 @end
-

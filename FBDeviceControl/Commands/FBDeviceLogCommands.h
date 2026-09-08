@@ -5,21 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/Foundation.h>
+// Fork-local: upstream rewrote this header's contents in Swift, so the types
+// now reach Objective-C through the generated FBDeviceControl-Swift.h. This shim keeps
+// the historical import path working for Unity's Pram.
 
-#import <FBControlCore/FBControlCore.h>
-
-NS_ASSUME_NONNULL_BEGIN
-
-@class FBDevice;
-
-/**
- An implementation of Log Commands for Devices.
- */
-@interface FBDeviceLogCommands : NSObject <FBLogCommands, FBiOSTargetCommand>
-+ (instancetype)commandsWithTarget:(FBDevice *)target;
-- (FBFuture<id<FBLogOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer;
-
-@end
-
-NS_ASSUME_NONNULL_END
+#import <FBDeviceControl/FBDeviceControl.h>

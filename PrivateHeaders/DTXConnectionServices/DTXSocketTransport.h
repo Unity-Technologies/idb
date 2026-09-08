@@ -5,19 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <Foundation/Foundation.h>
+
 #import <DTXConnectionServices/DTXFileDescriptorTransport.h>
 
 @interface DTXSocketTransport : DTXFileDescriptorTransport
 {
-    NSObject<OS_dispatch_semaphore> *_socketAcceptedSem;
-    NSObject<OS_dispatch_source> *_acceptSource;
-    NSArray *_addresses;
-    int _port;
+  dispatch_semaphore_t _socketAcceptedSem;
+  dispatch_source_t _acceptSource;
+  NSArray *_addresses;
+  int _port;
 }
 
 + (id)addressForHost:(const char *)arg1 port:(int)arg2;
 + (id)schemes;
-@property(readonly) int port; // @synthesize port=_port;
+@property (readonly) int port; // @synthesize port=_port;
 - (int)supportedDirections;
 - (id)localAddresses;
 - (void)disconnect;
@@ -32,4 +34,3 @@
 - (void)_setupWithLocalPort:(int)arg1;
 
 @end
-

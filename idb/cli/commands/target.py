@@ -7,10 +7,11 @@
 # pyre-strict
 
 import json
+import os
 from argparse import ArgumentParser, Namespace, SUPPRESS
-from typing import Mapping, Union
+from collections.abc import Mapping
+from typing import Union
 
-import idb.common.plugin as plugin
 from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.signal import signal_handler_event
@@ -37,7 +38,7 @@ class DisconnectCommandException(Exception):
     pass
 
 
-def get_destination(args: Namespace) -> Union[TCPAddress, str]:
+def get_destination(args: Namespace) -> TCPAddress | str:
     if is_udid(args.companion):
         return args.companion
     elif args.port and args.companion:
@@ -81,11 +82,6 @@ class TargetConnectCommand(ManagementCommand):
             destination = get_destination(args=args)
             response = await manager.connect(
                 destination=destination,
-                metadata={
-                    key: value
-                    for (key, value) in plugin.resolve_metadata(self.logger).items()
-                    if isinstance(value, str)
-                },
             )
             if args.json:
                 print(
@@ -231,7 +227,12 @@ class TargetCreateCommand(CompanionCommand):
 class UDIDTargetedCompanionCommand(CompanionCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser=parser)
-        parser.add_argument("udid", help="The UDID of the target", nargs="?")
+        parser.add_argument(
+            "udid",
+            help="The UDID of the target",
+            nargs="?",
+            default=os.environ.get("IDB_UDID"),
+        )
         parser.add_argument("--udid", help=SUPPRESS, dest="udid_flag")
 
     def get_udid(self, args: Namespace) -> str:
@@ -239,6 +240,9 @@ class UDIDTargetedCompanionCommand(CompanionCommand):
             return args.udid
         elif args.udid_flag:
             return args.udid_flag
+        env_udid = os.environ.get("IDB_UDID")
+        if env_udid:
+            return env_udid
         raise Exception("Need to provide udid as a position argument")
 
 

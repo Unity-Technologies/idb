@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSDictionary, NSNumber, NSString;
+#import <Foundation/Foundation.h>
 
 @protocol XCTMessagingRole_PerformanceMeasurementReporting_Legacy
 - (id)_XCT_testMethod:(NSString *)arg1 ofClass:(NSString *)arg2 didMeasureMetric:(NSDictionary *)arg3 file:(NSString *)arg4 line:(NSNumber *)arg5;
 @end
-

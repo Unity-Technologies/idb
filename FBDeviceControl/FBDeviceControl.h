@@ -6,24 +6,25 @@
  */
 
 #import <FBDeviceControl/FBAFCConnection.h>
+#import <FBDeviceControl/FBAMDServiceConnection.h>
 #import <FBDeviceControl/FBAMDefines.h>
-#import <FBDeviceControl/FBAMDevice+Private.h>
 #import <FBDeviceControl/FBAMDevice.h>
 #import <FBDeviceControl/FBAMDeviceManager.h>
+#import <FBDeviceControl/FBAMRestorableDevice.h>
 #import <FBDeviceControl/FBAMRestorableDeviceManager.h>
 #import <FBDeviceControl/FBDevice.h>
-#import <FBDeviceControl/FBDeviceActivationCommands.h>
-#import <FBDeviceControl/FBDeviceApplicationCommands.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
-#import <FBDeviceControl/FBDeviceControlError.h>
 #import <FBDeviceControl/FBDeviceControlFrameworkLoader.h>
-#import <FBDeviceControl/FBDeviceFileCommands.h>
-#import <FBDeviceControl/FBDeviceLogCommands.h>
 #import <FBDeviceControl/FBDeviceDebugSymbolsCommands.h>
-#import <FBDeviceControl/FBDevicePowerCommands.h>
-#import <FBDeviceControl/FBDeviceRecoveryCommands.h>
-#import <FBDeviceControl/FBDeviceSet.h>
-#import <FBDeviceControl/FBDeviceSocketForwardingCommands.h>
-#import <FBDeviceControl/FBDeviceVideo.h>
-#import <FBDeviceControl/FBDeviceVideoStream.h>
-#import <FBDeviceControl/FBDeviceXCTestCommands.h>
+#import <FBDeviceControl/FBDeviceManager.h>
+#import <FBDeviceControl/FBInstrumentsClient.h>
+
+// Fork-local: the generated Swift header refers to types from these
+// frameworks, but only @imports them under Clang modules, which are not
+// enabled in Objective-C++ translation units such as Unity's Pram.
+#import <AVFoundation/AVFoundation.h>
+#import <CoreMedia/CoreMedia.h>
+
+#if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)
+ #import <FBDeviceControl/FBDeviceControl-Swift.h>
+#endif
