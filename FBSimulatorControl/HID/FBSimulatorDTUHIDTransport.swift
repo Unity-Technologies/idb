@@ -10,7 +10,10 @@ import CoreGraphics
 import Darwin
 @preconcurrency import FBControlCore
 import Foundation
-import XPC
+// Fork-local: the macOS 14 SDK does not mark xpc_connection_t Sendable, so a
+// Swift 6 build there rejects the nonisolated disconnect() below. Newer SDKs
+// annotate it and the attribute simply has no effect.
+@preconcurrency import XPC
 
 /// Tracks the per-contact phase so that a stream of Indigo `.down`/`.up` events maps onto the
 /// `dtuhidd` `start` / `position` / `end` model: the first `.down` is a `start`, subsequent `.down`s
