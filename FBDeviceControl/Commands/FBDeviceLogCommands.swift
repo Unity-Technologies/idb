@@ -83,7 +83,11 @@ public class FBDeviceLogCommands: NSObject, FBiOSTargetCommand {
         enter: { connection, teardown -> Any in
           let reader = connection.readFromConnectionWriting(to: consumer, on: readQueue)
           reader.startReading()
-          let readCompleted = reader.finishedReading(withTimeout: .infinity).mapReplace(NSNull()) as! FBFuture<NSNull>
+          // Fork-local: the plain `finishedReading` property, not
+          // finishedReading(withTimeout:). The latter races the reader against a
+          // timeout and calls stopReading() when the timeout wins, and passing
+          // .infinity does not disable it.
+          let readCompleted = reader.finishedReading.mapReplace(NSNull()) as! FBFuture<NSNull>
           return FBDeviceLogOperation(
             consumer: consumer,
             readCompleted: readCompleted,

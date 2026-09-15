@@ -103,6 +103,12 @@ static FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
 
 dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuration)
 {
+  // Fork-local: casting a non-finite duration to int64_t is undefined behaviour,
+  // and in practice produces a deadline a few seconds out rather than never --
+  // so an "infinite" timeout fired almost immediately.
+  if (!isfinite(inDuration) || inDuration >= (NSTimeInterval)(INT64_MAX / NSEC_PER_SEC)) {
+    return DISPATCH_TIME_FOREVER;
+  }
   return dispatch_time(DISPATCH_TIME_NOW, (int64_t)(inDuration * NSEC_PER_SEC));
 }
 
